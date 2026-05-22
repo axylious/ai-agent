@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 from google import genai
 import argparse
 from google.genai import types
+from prompts import system_prompt
+from call_function import available_functions
+
 
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -20,8 +23,12 @@ args = parser.parse_args()
 
 def generateContent(msg):
     return client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         contents=msg,
+        config=types.GenerateContentConfig(
+            tools=[available_functions],
+            system_instruction=system_prompt,
+        ),
     )
 
 
@@ -37,6 +44,8 @@ def main():
             print(f"Response tokens: {res.usage_metadata.candidates_token_count}")
     else:
         raise RuntimeError("API request failed to retrieve usage_data")
+    for function_call in res.function_calls:
+        print(f"Calling function: {function_call.name}({function_call.args})")
     print(res.text)
 
 

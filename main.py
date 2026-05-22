@@ -4,7 +4,7 @@ from google import genai
 import argparse
 from google.genai import types
 from prompts import system_prompt
-from call_function import available_functions
+from call_function import available_functions, call_function
 
 
 load_dotenv()
@@ -44,8 +44,22 @@ def main():
             print(f"Response tokens: {res.usage_metadata.candidates_token_count}")
     else:
         raise RuntimeError("API request failed to retrieve usage_data")
+
+    func_results = []
     for function_call in res.function_calls:
-        print(f"Calling function: {function_call.name}({function_call.args})")
+        function_call_result = call_function(function_call)
+
+        if not function_call_result.parts:
+            raise Exception("Missing parts list")
+
+        if not function_call_result.parts[0].function_response:
+            raise Exception("Missing function response")
+
+        func_results.append(function_call_result.parts[0])
+
+        if args.verbose:
+            print(f"-> {function_call_result.parts[0].function_response.response}")
+
     print(res.text)
 
 

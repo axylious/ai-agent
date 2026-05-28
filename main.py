@@ -23,7 +23,7 @@ args = parser.parse_args()
 
 def generateContent(msg):
     return client.models.generate_content(
-        model="gemini-2.5-flash-lite",
+        model="gemini-2.5-flash",
         contents=msg,
         config=types.GenerateContentConfig(
             tools=[available_functions],
@@ -35,32 +35,43 @@ def generateContent(msg):
 def main():
     messages = [types.Content(role="user", parts=[types.Part(text=args.user_prompt)])]
 
-    res = generateContent(messages)
+    for _ in range(20):
+        res = generateContent(messages)
 
-    if res.usage_metadata:
-        if args.verbose:
-            print(f"User prompt: {args.user_prompt}")
-            print(f"Prompt tokens: {res.usage_metadata.prompt_token_count}")
-            print(f"Response tokens: {res.usage_metadata.candidates_token_count}")
-    else:
-        raise RuntimeError("API request failed to retrieve usage_data")
+        if res.candidates:
+            for candidate in res.candidates:
+                messages.append(candidate.content)
 
-    func_results = []
-    for function_call in res.function_calls:
-        function_call_result = call_function(function_call)
+        if res.usage_metadata:
+            if args.verbose:
+                print(f"User prompt: {args.user_prompt}")
+                print(f"Prompt tokens: {res.usage_metadata.prompt_token_count}")
+                print(f"Response tokens: {res.usage_metadata.candidates_token_count}")
+        else:
+            raise RuntimeError("API request failed to retrieve usage_data")
 
-        if not function_call_result.parts:
-            raise Exception("Missing parts list")
+        func_results = []
+        if res.function_calls:
+            for function_call in res.function_calls:
+                function_call_result = call_function(function_call)
 
-        if not function_call_result.parts[0].function_response:
-            raise Exception("Missing function response")
+                if not function_call_result.parts:
+                    raise Exception("Missing parts list")
 
-        func_results.append(function_call_result.parts[0])
+                if not function_call_result.parts[0].function_response:
+                    raise Exception("Missing function response")
 
-        if args.verbose:
-            print(f"-> {function_call_result.parts[0].function_response.response}")
+                if args.verbose:
+                    print(
+                        f"-> {function_call_result.parts[0].function_response.response}"
+                    )
+                func_results.append(function_call_result.parts[0])
+        else:
+            if res.text:
+                print(res.text)
+            break
 
-    print(res.text)
+        messages.append(types.Content(role="user", parts=func_results))
 
 
 if __name__ == "__main__":

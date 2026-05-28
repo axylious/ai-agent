@@ -24,25 +24,26 @@ def get_files_info(working_directory, directory="."):
         os.path.commonpath([working_dir_abs, target_dir]) == working_dir_abs
     )
 
-    if directory == ".":
-        print("Result for current directory:")
-    else:
-        print(f"Result for '{directory}' directory:")
-
+    # if directory == ".":
+    #     print("Result for current directory:")
+    # else:
+    #     print(f"Result for '{directory}' directory:")
+    file_res = []
     if not valid_target_dir:
-        print(
-            f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
-        )
+        return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
+        # print(
+        #     f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
+        # )
     else:
         if not os.path.isdir(target_dir):
-            print(f'Error: "{target_dir}" is not a directory')
-
+            return f'Error: "{target_dir}" is not a directory'
         else:
             for dir in os.listdir(target_dir):
-                name = dir
-                # try:
-                is_dir = os.path.isdir("/".join([target_dir, dir]))
-                file_size = os.path.getsize("/".join([target_dir, dir]))
-                print(f"- {name}: file_size={file_size} bytes, is_dir={is_dir}")
-                # except OSError:
-                #     print("Not found")
+                file_res.append(dir)
+            # try:
+            #     is_dir = os.path.isdir(os.path.join(target_dir, dir))
+            #     file_size = os.path.getsize(os.path.join(target_dir, dir))
+            #     # print(f"- {name}: file_size={file_size} bytes, is_dir={is_dir}")
+            # except OSError:
+            #     return "Not found"
+    return file_res
